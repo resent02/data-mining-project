@@ -8,12 +8,25 @@ Official modeling target:
 Main modeling decision:
 - the project uses a relative zone-risk model rather than a trip-probability model,
 - the training target stays aligned with Phase 3 and keeps severity weighting,
+- the model reads `generated/prepared/prepared_crash_features.csv.gz` from Phase 3,
 - the model is built on a zero-filled grid-time panel so that low-risk and no-crash cells are represented explicitly.
 
 Techniques used in Phase 4:
 - baseline: historical exact-slot mean for `grid_id + crash_month + crash_hour + is_weekend`,
 - main ML model: `HistGradientBoostingRegressor` trained on `log1p(severity_weight_sum)`,
 - scenario adjustment layer: smoothed multipliers for `rain`, `dark`, `wet_surface`, `rain_dark_wet`, and `pedbike`.
+
+Model settings table:
+
+| Setting | Value |
+| --- | --- |
+| Target | `severity_weight_sum` on `grid_id + crash_year + crash_month + crash_hour + is_weekend` |
+| Model | `HistGradientBoostingRegressor` trained on `log1p(severity_weight_sum)` |
+| Hyperparameters | `loss=squared_error`; `learning_rate=0.05`; `max_iter=250`; `max_depth=6`; `min_samples_leaf=100`; `l2_regularization=0.1`; `random_state=42` |
+| Train/test split | Train: `2018-2024`; holdout test: `2025` |
+| Zero-row sampling | Full train panel: `8,644,608` rows; positive train rows: `661,398`; zero rows: `7,983,210`; sampled zero rows: `750,000` |
+| Weights | Positive grid-time rows use `sample_weight=1.0`; sampled zero rows use `sample_weight=10.64428` |
+| Scenario multipliers | Grid-level smoothed severity-per-crash ratios with `alpha=25`, clipped to `0.5-3.0`; `pedbike` combinations clipped to `0.5-4.0`; global multipliers: `rain=1.2209`, `dark=1.3087`, `wet_surface=1.0931`, `rain_dark_wet=1.4428`, `pedbike=3.0` |
 
 ## 2. Generate test design
 
@@ -41,7 +54,7 @@ Reason for zero-row sampling:
 Feature groups used in the model:
 - spatial: `grid_center_lat`, `grid_center_lon`
 - calendar: `crash_month`, `crash_hour`, `is_weekend`, `is_night`, `is_rush_hour`, sine/cosine time encodings
-- historical priors: `grid_time_mean_target`, `grid_mean_target`, `grid_nonzero_slot_share`, `grid_month_mean_target`, `grid_hour_mean_target`, whawhi`grid_weekend_mean_target`
+- historical priors: `grid_time_mean_target`, `grid_mean_target`, `grid_nonzero_slot_share`, `grid_month_mean_target`, `grid_hour_mean_target`, `grid_weekend_mean_target`
 - global priors: `global_mean_target`, `global_time_mean_target`, `global_month_mean_target`, `global_hour_mean_target`, `global_weekend_mean_target`
 - grid profile: `avg_speed_limit`, `rain_share`, `dark_share`, `wet_surface_share`, `intersection_share`, `work_zone_share`, `pedbike_share`, `injury_share`, `serious_injury_share`, `fatal_share`, `train_crash_total`, `train_severity_per_crash`
 
