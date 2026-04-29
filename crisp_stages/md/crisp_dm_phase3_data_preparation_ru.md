@@ -13,7 +13,7 @@ Main modeling table:
 - The final modeling window is `2018-2025`.
 
 Official modeling target:
-- `severity_weight_sum`, a zone-level severity-weighted crash risk score.
+- `severity_weight_sum` on `grid_id + crash_year + crash_month + crash_hour + is_weekend`.
 
 ## 2. Clean Data
 
@@ -43,6 +43,19 @@ Severity weights used in the project:
 - `non_incapacitating = 2`
 - `incapacitating = 5`
 - `fatal = 20`
+
+Feature engineering table:
+
+| Feature | Source fields | Transformation | Reason |
+| --- | --- | --- | --- |
+| temporal calendar features | `CRASH_DATE` | parse timestamp and derive `crash_year`, `crash_month`, `crash_day`, `crash_hour`, `day_of_week`, `hour_of_week`, `season` | capture seasonal and repeated time patterns |
+| time-context flags | `CRASH_DATE` | derive `is_weekend`, `is_rush_hour`, `is_night` | represent traffic context relevant to route risk |
+| grid spatial features | `LATITUDE`, `LONGITUDE` | convert coordinates into `grid_lat_idx`, `grid_lon_idx`, `grid_id`, `grid_center_lat`, `grid_center_lon` | move from point crashes to a stable zone-level unit |
+| road and condition encoding | `POSTED_SPEED_LIMIT`, `LANE_CNT`, `TRAFFIC_CONTROL_DEVICE`, `DEVICE_CONDITION`, `TRAFFICWAY_TYPE`, `ALIGNMENT`, `ROADWAY_SURFACE_COND`, `ROAD_DEFECT`, `INTERSECTION_RELATED_I`, `WORK_ZONE_*` | numeric coercion, categorical normalization, `speed_limit_bin` | create consistent pre-crash predictors |
+| scenario flags | `WEATHER_CONDITION`, `LIGHTING_CONDITION`, `ROADWAY_SURFACE_COND`, `INTERSECTION_RELATED_I`, `WORK_ZONE_I`, `FIRST_CRASH_TYPE` | derive `is_rain`, `is_snow`, `is_dark`, `is_wet_surface`, `is_intersection`, `is_work_zone`, `is_pedbike` | support scenario-based risk layers |
+| crash target features | `INJURIES_TOTAL`, `INJURIES_FATAL`, `INJURIES_INCAPACITATING`, `INJURIES_NON_INCAPACITATING`, `INJURIES_REPORTED_NOT_EVIDENT` | derive `injury_crash`, `serious_injury_crash`, `fatal_crash`, `severity_weight` | define the official severity-weighted modeling target |
+| vehicle-context aggregates | `UNIT_TYPE`, `NUM_PASSENGERS`, `OCCUPANT_CNT`, `EXCEED_SPEED_LIMIT_I`, `TOWED_I`, `FIRE_I`, `CMRC_VEH_I` | group by `CRASH_RECORD_ID` and create count/sum/rate `vehicle_*` features | preserve crash composition context |
+| people-context aggregates | `PERSON_TYPE`, `INJURY_CLASSIFICATION`, `SEX`, `AGE`, `AIRBAG_DEPLOYED`, `SAFETY_EQUIPMENT` | group by `CRASH_RECORD_ID` and create count/sum/rate `person_*` features | preserve participant and injury context |
 
 Vehicle-context features are aggregated by crash:
 - `vehicle_rows`
@@ -106,7 +119,7 @@ Match coverage:
 - vehicle context matches `100%` of modeled crash rows,
 - people context matches about `99.77%` of modeled crash rows.
 
-The integrated crash-context table is useful for analysis and severity interpretation, but the main route-risk model should still use safe pre-crash predictors from the crash table.
+The integrated crash-context table is useful for analysis and severity interpretation, but the main route-risk model remains based on safe pre-crash predictors from the crash table.
 
 ## 5. Format Data
 
@@ -123,3 +136,4 @@ This preparation keeps the project aligned with the business goal:
 - scenario-based risk layers,
 - severity-weighted risk as the final official target.
 
+These prepared outputs also support later grid-time panel modeling in Phase 4.

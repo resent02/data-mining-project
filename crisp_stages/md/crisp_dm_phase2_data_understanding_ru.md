@@ -27,6 +27,49 @@ Main useful fields in the crash table:
 - conditions: `WEATHER_CONDITION`, `LIGHTING_CONDITION`, `ROADWAY_SURFACE_COND`
 - road context: `POSTED_SPEED_LIMIT`, `TRAFFIC_CONTROL_DEVICE`, `TRAFFICWAY_TYPE`, `LANE_CNT`, `ALIGNMENT`, `ROAD_DEFECT`, `INTERSECTION_RELATED_I`, `WORK_ZONE_I`
 
+Dataset overview:
+
+| Dataset | Rows | Columns | Key fields | Time coverage |
+| --- | ---: | ---: | --- | --- |
+| Crashes | 1,045,043 | 48 | `CRASH_DATE`, `LATITUDE`, `LONGITUDE`, `POSTED_SPEED_LIMIT`, `WEATHER_CONDITION` | `2013-03-03 16:48:00` to `2026-04-13 02:27:00` |
+| Vehicles | 2,130,727 | 71 | `CRASH_RECORD_ID`, `UNIT_TYPE`, `VEHICLE_TYPE`, `MANEUVER`, `OCCUPANT_CNT` | linked to crash dates |
+| People | 2,293,745 | 29 | `CRASH_RECORD_ID`, `PERSON_TYPE`, `INJURY_CLASSIFICATION`, `AGE`, `SEX` | linked to crash dates |
+
+Crash table key fields:
+
+| Field | Role | Type | Missing % | Summary stats |
+| --- | --- | --- | ---: | --- |
+| `CRASH_DATE` | crash timestamp | datetime | 0.00 | `2013-03-03 16:48:00` to `2026-04-13 02:27:00` |
+| `CRASH_HOUR` | hour-of-day context | integer | 0.00 | min `0`, median `14`, mean `13.19`, max `23` |
+| `CRASH_DAY_OF_WEEK` | weekly context | integer | 0.00 | min `1`, median `4`, mean `4.12`, max `7` |
+| `LATITUDE` | spatial position | numeric | 0.77 | min `0.00`, median `41.88`, mean `41.86`, max `42.02` |
+| `LONGITUDE` | spatial position | numeric | 0.77 | min `-87.94`, median `-87.67`, mean `-87.67`, max `0.00` |
+| `POSTED_SPEED_LIMIT` | road-speed context | numeric | 0.00 | min `0`, median `30`, mean `28.42`, max `99` |
+| `WEATHER_CONDITION` | environment | categorical | 0.00 | top `CLEAR (818,876)` |
+| `LIGHTING_CONDITION` | visibility | categorical | 0.00 | top `DAYLIGHT (668,913)` |
+
+Vehicles table key fields:
+
+| Field | Role | Type | Missing % | Summary stats |
+| --- | --- | --- | ---: | --- |
+| `UNIT_TYPE` | participant type | categorical | 0.11 | top `DRIVER (1,784,314)` |
+| `VEHICLE_TYPE` | vehicle class | categorical | 2.38 | top `PASSENGER (1,296,156)` |
+| `MANEUVER` | movement before crash | categorical | 2.38 | top `STRAIGHT AHEAD (968,011)` |
+| `TRAVEL_DIRECTION` | travel heading | categorical | 2.38 | top `N (487,961)` |
+| `OCCUPANT_CNT` | occupants in unit | numeric | 2.38 | min `0`, median `1`, mean `1.08`, max `99` |
+| `EXCEED_SPEED_LIMIT_I` | police speeding flag | categorical | 99.89 | top `Y (1,803)` |
+
+People table key fields:
+
+| Field | Role | Type | Missing % | Summary stats |
+| --- | --- | --- | ---: | --- |
+| `PERSON_TYPE` | participant role | categorical | 0.00 | top `DRIVER (1,784,314)` |
+| `INJURY_CLASSIFICATION` | injury outcome | categorical | 0.03 | top `NO INDICATION OF INJURY (2,085,158)` |
+| `SEX` | participant sex | categorical | 1.71 | top `M (1,186,645)` |
+| `AGE` | participant age | numeric | 28.98 | min `-177`, median `35`, mean `37.98`, max `110` |
+| `DRIVER_ACTION` | pre-crash action | categorical | 20.31 | top `NONE (646,821)` |
+| `SAFETY_EQUIPMENT` | protection usage | categorical | 0.28 | top `USAGE UNKNOWN (1,116,609)` |
+
 ## 3. Explore data
 
 Main observations from the EDA:
@@ -79,14 +122,25 @@ Main quality findings:
 - The people and vehicles tables include sparse fields, so they are more useful as secondary inputs than as the main predictive base.
 - The data contains crash events only, not traffic volume or trip counts.
 
+Data quality table:
+
+| Issue | Affected columns | Frequency | Impact | Handling |
+| --- | --- | --- | --- | --- |
+| Missing or invalid geolocation | `LATITUDE`, `LONGITUDE` | `8,015` missing rows (`0.77%`); `70` zero-coordinate rows (`0.01%`) | these crashes cannot be placed reliably on the map | invalid and zero coordinates are filtered during spatial preparation |
+| `UNKNOWN` condition labels | `WEATHER_CONDITION`, `LIGHTING_CONDITION`, `ROADWAY_SURFACE_COND` | weather: `63,630` (`6.09%`); lighting: `51,769` (`4.95%`); surface: `100,755` (`9.64%`) | weakens interpretation of external-condition features | `UNKNOWN` is retained as an explicit category |
+| Sparse vehicle speeding flag | `EXCEED_SPEED_LIMIT_I` | `2,128,323` missing rows (`99.89%`) | too sparse for reliable use as a core predictor | the field is retained only as secondary context |
+| Missing and invalid ages | `AGE` | `664,780` missing rows (`28.98%`); `11` invalid rows (`0.00%`) | limits people-level demographic analysis | missing ages are retained and invalid ages are removed during preparation |
+| Uneven temporal coverage | `CRASH_DATE` | `167,132` rows (`15.99%`) outside `2018-2025`; `29,207` rows (`2.79%`) in partial `2026` | early and partial years can bias modeling | the main modeling window is restricted to `2018-2025` |
+| No exposure denominator | all tables | not row-countable | prevents exact trip-level crash probability estimation | results are presented as a relative zone-risk model |
+
 Main project limitation:
 - Without denominator data, the model should be presented as a relative crash-risk / hotspot model, not as an exact probability of crash for a single trip.
 
 ## 5. Phase 2 conclusion
 
 The available data is sufficient for the first MVP of the project:
-- build a zone-based or grid-based risk map,
-- compare risk under rain, darkness, and wet-surface conditions,
-- use the crash table as the main source and vehicles/people as supporting tables.
+- a zone-based or grid-based risk map can be built,
+- risk under rain, darkness, and wet-surface conditions can be compared,
+- the crash table serves as the main source and vehicles/people serve as supporting tables.
 
-The next step is to prepare a modeling table with safe predictors only and avoid post-crash leakage fields such as injury outcomes and police-assigned causes.
+The next step is the preparation of a modeling table with safe predictors only, with post-crash leakage fields such as injury outcomes and police-assigned causes excluded.
