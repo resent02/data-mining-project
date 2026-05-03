@@ -24,8 +24,8 @@ Model settings table:
 | Model | `HistGradientBoostingRegressor` trained on `log1p(severity_weight_sum)` |
 | Hyperparameters | `loss=squared_error`; `learning_rate=0.05`; `max_iter=250`; `max_depth=6`; `min_samples_leaf=100`; `l2_regularization=0.1`; `random_state=42` |
 | Train/test split | Train: `2018-2024`; holdout test: `2025` |
-| Zero-row sampling | Full train panel: `8,644,608` rows; positive train rows: `661,398`; zero rows: `7,983,210`; sampled zero rows: `750,000` |
-| Weights | Positive grid-time rows use `sample_weight=1.0`; sampled zero rows use `sample_weight=10.64428` |
+| Zero-row sampling | Full train panel: `8,636,544` rows; positive train rows: `661,398`; zero rows: `7,975,146`; sampled zero rows: `750,000` |
+| Weights | Positive grid-time rows use `sample_weight=1.0`; sampled zero rows use `sample_weight=10.63353` |
 | Scenario multipliers | Grid-level smoothed severity-per-crash ratios with `alpha=25`, clipped to `0.5-3.0`; `pedbike` combinations clipped to `0.5-4.0`; global multipliers: `rain=1.2209`, `dark=1.3087`, `wet_surface=1.0931`, `rain_dark_wet=1.4428`, `pedbike=3.0` |
 
 ## 2. Generate test design
@@ -36,13 +36,15 @@ Time split:
 
 Modeling panel summary:
 - modeled crash rows: `870,705`
-- unique grids: `2,144`
+- unique grids: `2,142` in the train-window grid universe
 - positive train grid-time rows: `661,398`
-- full train panel size: `8,644,608`
-- zero rows in full train panel: `7,983,210`
+- full train panel size: `8,636,544`
+- zero rows in full train panel: `7,975,146`
 - sampled zero rows for fitting: `750,000`
-- zero-row sample weight: `10.64428`
-- full 2025 test panel: `1,234,944` rows
+- zero-row sample weight: `10.63353`
+- full 2025 test panel: `1,233,792` rows
+
+The grid lookup is fit from `2018-2024` training crashes only, so 2025 holdout-only grid cells do not define the modeled panel.
 
 Reason for zero-row sampling:
 - the full train panel is highly sparse,
@@ -71,21 +73,21 @@ Saved modeling artifacts:
 ## 4. Assess model
 
 Row-level 2025 results:
-- baseline MAE: `0.07237`
-- baseline RMSE: `0.47319`
-- model MAE: `0.05374`
-- model RMSE: `0.44355`
+- baseline MAE: `0.07243`
+- baseline RMSE: `0.47341`
+- model MAE: `0.05398`
+- model RMSE: `0.44389`
 
 Grid-level 2025 results:
-- baseline MAE: `7.85321`
-- baseline RMSE: `11.81747`
-- model MAE: `12.06966`
-- model RMSE: `19.67980`
-- model grid-level `R²`: `0.35109`
+- baseline MAE: `7.86054`
+- baseline RMSE: `11.82299`
+- model MAE: `11.94731`
+- model RMSE: `19.49520`
+- model grid-level `R²`: `0.36334`
 
 Hotspot ranking quality:
 - top-100 overlap for baseline: `0.66`
-- top-100 overlap for model: `0.69`
+- top-100 overlap for model: `0.67`
 
 Interpretation of the results:
 - the learned model improves dynamic row-level risk estimation compared with the historical baseline,
@@ -116,8 +118,8 @@ Final scoring logic:
 Example score from the saved pipeline:
 - `grid_id = 58_52`
 - weekday `18:00`, month `11`, scenario `rain_dark_wet`
-- base prediction: `0.49395`
-- adjusted prediction: `0.77702`
+- base prediction: `0.50673`
+- adjusted prediction: `0.79713`
 - final risk score: `100`
 
 Phase 4 conclusion:
