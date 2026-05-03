@@ -56,7 +56,7 @@ The model outperforms the baseline at the row level, which is the operationally 
 
 The dataset contains crash events but no traffic volume denominator. High-volume corridors may receive elevated risk scores simply because more vehicles pass through them, not because they are disproportionately dangerous per trip. For this reason, all results are presented as relative risk tiers rather than absolute crash probabilities.
 
-Weather, lighting, and surface condition fields contain `4-10%` `UNKNOWN` labels. Scenario multipliers are computed only from labeled rows, so unlabeled crashes dilute the scenario signal. Pre-2018 data is too sparse for reliable modeling and is excluded from the training window. The 2025 test set covers only the months available at training time and does not represent a complete annual cycle.
+Weather, lighting, and surface condition fields contain `4-10%` `UNKNOWN` labels. Scenario multipliers are computed only from labeled rows, so unlabeled crashes dilute the scenario signal. Pre-2018 data is too sparse for reliable modeling and is excluded from the training window. The 2025 test set covers a full calendar year, which strengthens the temporal validation, but the data export date (April 2026) means any systematic reporting delays in late-2025 records could marginally undercount crashes near the year boundary.
 
 Minor crashes with no injuries may have condition fields filled from desk reports rather than field observation. This introduces noise into the scenario flags used in the multiplier layer and may understate the true relationship between adverse conditions and crash severity.
 
