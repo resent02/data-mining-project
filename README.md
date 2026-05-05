@@ -16,7 +16,7 @@ pip install -r requirements.txt
 
 - `crisp_stages/code/phase2/` contains the Phase 2 notebook for data understanding and EDA.
 - `crisp_stages/code/phase3/` contains the Phase 3 notebook for data preparation and feature engineering.
-- `crisp_stages/code/phase4/` contains the Phase 4 modeling script and notebook wrapper.
+- `crisp_stages/code/phase4/` contains the Phase 4 modeling notebook.
 - `crisp_stages/md/` contains the short CRISP-DM report text for phases 1-4.
 - `data/` contains the raw Chicago crash CSV files used by the notebooks.
 - `generated/prepared/` contains derived outputs from Phase 3.
@@ -56,12 +56,6 @@ Run the notebooks from the repository root in CRISP-DM order:
 jupyter nbconvert --to notebook --execute --inplace crisp_stages/code/phase2/crisp_dm_phase2_data_understanding.ipynb
 jupyter nbconvert --to notebook --execute --inplace crisp_stages/code/phase3/crisp_dm_phase3_data_preparation.ipynb
 jupyter nbconvert --to notebook --execute --inplace crisp_stages/code/phase4/crisp_dm_phase4_modeling.ipynb
-```
-
-Phase 4 can also be run as a script after Phase 3 has prepared the working data:
-
-```bash
-python crisp_stages/code/phase4/crisp_dm_phase4_modeling.py
 ```
 
 ## Expected Outputs

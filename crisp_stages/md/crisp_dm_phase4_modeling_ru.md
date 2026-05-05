@@ -9,6 +9,7 @@ Main modeling decision:
 - the project uses a relative zone-risk model rather than a trip-probability model,
 - the training target stays aligned with Phase 3 and keeps severity weighting,
 - the model reads `generated/prepared/prepared_crash_features.csv.gz` from Phase 3,
+- `is_pedbike` is read from Phase 3 as an auxiliary scenario field derived from `FIRST_CRASH_TYPE`; it is retained for ped/bike scenario profiling and is not part of the safe predictor set,
 - the model is built on a zero-filled grid-time panel so that low-risk and no-crash cells are represented explicitly.
 
 Techniques used in Phase 4:
@@ -58,7 +59,7 @@ Feature groups used in the model:
 - calendar: `crash_month`, `crash_hour`, `is_weekend`, `is_night`, `is_rush_hour`, sine/cosine time encodings
 - historical priors: `grid_time_mean_target`, `grid_mean_target`, `grid_nonzero_slot_share`, `grid_month_mean_target`, `grid_hour_mean_target`, `grid_weekend_mean_target`
 - global priors: `global_mean_target`, `global_time_mean_target`, `global_month_mean_target`, `global_hour_mean_target`, `global_weekend_mean_target`
-- grid profile: `avg_speed_limit`, `rain_share`, `dark_share`, `wet_surface_share`, `intersection_share`, `work_zone_share`, `pedbike_share`, `injury_share`, `serious_injury_share`, `fatal_share`, `train_crash_total`, `train_severity_per_crash`
+- grid profile: `avg_speed_limit`, `rain_share`, `dark_share`, `wet_surface_share`, `intersection_share`, `work_zone_share`, `pedbike_share` (auxiliary ped/bike scenario profile), `injury_share`, `serious_injury_share`, `fatal_share`, `train_crash_total`, `train_severity_per_crash`
 
 Saved modeling artifacts:
 - `generated/modeling/severity_risk_histgb.joblib`
