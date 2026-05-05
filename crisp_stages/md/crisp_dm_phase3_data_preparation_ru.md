@@ -24,6 +24,11 @@ Cleaning is conservative:
 - sparse or noisy fields are not imputed,
 - post-crash leakage fields are excluded from the predictor set.
 
+Exception kept for downstream compatibility:
+- `FIRST_CRASH_TYPE` itself is not a predictor,
+- `is_pedbike` is derived from `FIRST_CRASH_TYPE` as a scenario-only auxiliary field,
+- `is_pedbike` is retained only for ped/bike scenario profiling and Phase 4 compatibility, not as a safe predictor.
+
 ## 3. Construct Data
 
 New features are created from the crash table:
@@ -31,6 +36,7 @@ New features are created from the crash table:
 - spatial features: `grid_id`, `grid_center_lat`, `grid_center_lon`
 - road context features: `POSTED_SPEED_LIMIT`, `speed_limit_bin`, `TRAFFIC_CONTROL_DEVICE`, `DEVICE_CONDITION`, `WEATHER_CONDITION`, `LIGHTING_CONDITION`, `TRAFFICWAY_TYPE`, `LANE_CNT`, `ALIGNMENT`, `ROADWAY_SURFACE_COND`, `ROAD_DEFECT`, `INTERSECTION_RELATED_I`, `WORK_ZONE_I`, `WORK_ZONE_TYPE`, `WORKERS_PRESENT_I`
 - derived scenario flags: `is_rain`, `is_snow`, `is_dark`, `is_wet_surface`, `is_intersection`, `is_work_zone`
+- scenario-only auxiliary field: `is_pedbike`
 
 Crash targets are also created:
 - `injury_crash`
@@ -52,7 +58,8 @@ Feature engineering table:
 | time-context flags | `CRASH_DATE` | derive `is_weekend`, `is_rush_hour`, `is_night` | represent traffic context relevant to route risk |
 | grid spatial features | `LATITUDE`, `LONGITUDE` | convert coordinates into `grid_lat_idx`, `grid_lon_idx`, `grid_id`, `grid_center_lat`, `grid_center_lon` | move from point crashes to a stable zone-level unit |
 | road and condition encoding | `POSTED_SPEED_LIMIT`, `LANE_CNT`, `TRAFFIC_CONTROL_DEVICE`, `DEVICE_CONDITION`, `TRAFFICWAY_TYPE`, `ALIGNMENT`, `ROADWAY_SURFACE_COND`, `ROAD_DEFECT`, `INTERSECTION_RELATED_I`, `WORK_ZONE_*` | numeric coercion, categorical normalization, `speed_limit_bin` | create consistent pre-crash predictors |
-| scenario flags | `WEATHER_CONDITION`, `LIGHTING_CONDITION`, `ROADWAY_SURFACE_COND`, `INTERSECTION_RELATED_I`, `WORK_ZONE_I`, `FIRST_CRASH_TYPE` | derive `is_rain`, `is_snow`, `is_dark`, `is_wet_surface`, `is_intersection`, `is_work_zone`, `is_pedbike` | support scenario-based risk layers |
+| safe scenario/environment flags | `WEATHER_CONDITION`, `LIGHTING_CONDITION`, `ROADWAY_SURFACE_COND`, `INTERSECTION_RELATED_I`, `WORK_ZONE_I` | derive `is_rain`, `is_snow`, `is_dark`, `is_wet_surface`, `is_intersection`, `is_work_zone` | support scenario-based risk layers from safe pre-crash context |
+| scenario-only pedbike flag | `FIRST_CRASH_TYPE` | derive `is_pedbike` | retain ped/bike scenario context for downstream compatibility without reclassifying `FIRST_CRASH_TYPE` as a safe predictor |
 | crash target features | `INJURIES_TOTAL`, `INJURIES_FATAL`, `INJURIES_INCAPACITATING`, `INJURIES_NON_INCAPACITATING`, `INJURIES_REPORTED_NOT_EVIDENT` | derive `injury_crash`, `serious_injury_crash`, `fatal_crash`, `severity_weight` | define the official severity-weighted modeling target |
 | vehicle-context aggregates | `UNIT_TYPE`, `NUM_PASSENGERS`, `OCCUPANT_CNT`, `EXCEED_SPEED_LIMIT_I`, `TOWED_I`, `FIRE_I`, `CMRC_VEH_I` | group by `CRASH_RECORD_ID` and create count/sum/rate `vehicle_*` features | preserve crash composition context |
 | people-context aggregates | `PERSON_TYPE`, `INJURY_CLASSIFICATION`, `SEX`, `AGE`, `AIRBAG_DEPLOYED`, `SAFETY_EQUIPMENT` | group by `CRASH_RECORD_ID` and create count/sum/rate `person_*` features | preserve participant and injury context |
@@ -120,11 +127,12 @@ Match coverage:
 - people context matches about `99.77%` of modeled crash rows.
 
 The integrated crash-context table is useful for analysis and severity interpretation, but the main route-risk model remains based on safe pre-crash predictors from the crash table.
+The `prepared_crash_features.csv.gz` file also retains `is_pedbike` as a scenario-only auxiliary compatibility field, separate from the safe predictor set.
 
 ## 5. Format Data
 
 The final prepared data is stored in `generated/prepared/` and organized into:
-- one crash-level modeling table,
+- one crash-level modeling table with safe predictors, one scenario-only auxiliary compatibility field, and crash-level targets,
 - one crash-context table for vehicles,
 - one crash-context table for people,
 - one merged crash-context table,

@@ -136,6 +136,10 @@ Data quality table:
 Main project limitation:
 - Without denominator data, the model should be presented as a relative crash-risk / hotspot model, not as an exact probability of crash for a single trip.
 
+Important feature-selection note:
+- `FIRST_CRASH_TYPE` remains a leakage field and is not used as a safe predictor.
+- A narrow derived exception may still be retained for scenario profiling: `is_pedbike`, used only for ped/bike scenario layers and downstream compatibility.
+
 ## 5. Phase 2 conclusion
 
 The available data is sufficient for the first MVP of the project:
@@ -143,4 +147,4 @@ The available data is sufficient for the first MVP of the project:
 - risk under rain, darkness, and wet-surface conditions can be compared,
 - the crash table serves as the main source and vehicles/people serve as supporting tables.
 
-The next step is the preparation of a modeling table with safe predictors only, with post-crash leakage fields such as injury outcomes and police-assigned causes excluded.
+The next step is the preparation of a modeling table with safe predictors only, with post-crash leakage fields such as injury outcomes and police-assigned causes excluded. A narrow scenario-only auxiliary field such as `is_pedbike` may still be retained for ped/bike layers and downstream compatibility, without being treated as a safe predictor.
